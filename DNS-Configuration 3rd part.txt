@@ -1,0 +1,192 @@
+
+sudo apt install net-tools
+sudo apt install bind9
+sudo apt-get install bind9 bind9utils bind9-doc
+-----------------------------------
+-----------------------------------
+
+<CHANGE VIRTUAL BOX NETWORK TO BRIDGE ADAPTER>
+
+***********************
+verysecureserver.com
+ip 192.168.0.6
+default 192.168.0.1
+***********************
+ip addr
+ip route 
+sudo -i
+named -v
+
+cd /etc/bind
+ls
+hostnamectl status
+gedit /etc/hosts
+
+---------------------------------------------------------------------------
+[After the command edit next]
+
+192.168.0.4	ubuntu-server.verysecureserver.com	ubuntu-server
+
+[save and exit]
+
+-----------------------------------------------------------------------------
+
+hostname
+dnsdomainname
+hostname --fqdn
+
+cp named.conf.options named.conf.options.orig
+gedit named.conf.options
+
+[After the command edit next]
+
+	//========================================================================
+	dnssec-validation auto;
+	listen-on-v6 { any; };
+	recursion yes;
+	listen-on{192.168.0.6;};
+	allow-transfer {none;};
+	
+	forwarders {
+	192.168.0.1;
+
+	};
+
+[save and exit]
+
+cp named.conf.local named.conf.local.orig
+gedit named.conf.local
+
+-------------------------------------------------------------------------------------
+[After the command edit next]
+
+//forward lookup zone
+zone "verysecureserver.com" IN{
+	type master;
+	file "/etc/bind/db.verysecureserver.com";
+};
+
+//reverse lookup zone
+zone "0.168.192.in-addr.arpa" IN {
+	type master;
+	file "/etc/bind/db.0.168.192";
+};
+
+[save and exit]
+-------------------------------------------------------------------------------------
+
+named-checkconf
+ls
+cat named.conf.local
+cp db.local db.cnn.com
+gedit db.cnn.com
+
+------------------------------------------------------------------------------------
+[Replace full file with that text]
+
+;
+; BIND data file for local loopback interface
+;
+$TTL	604800
+@	IN	SOA	ns1.verysecureserver.com. root.verysecureserver.com. (
+			      2		; Serial
+			 604800		; Refresh
+			  86400		; Retry
+			2419200		; Expire
+			 604800 )	; Negative Cache TTL
+;
+@	IN	NS	ns1.verysecureserver.com.
+ns1	IN	A	192.168.0.6
+www	IN	A	192.168.0.6
+hello	IN	A	192.168.0.6
+world	IN	A	192.168.0.6
+
+@	IN	AAAA	::1
+[Save and exit]
+-------------------------------------------------------------------------------------
+
+named-checkzone talukder.com db.talukder.com
+cp db.127 db.0.168.192
+gedit db.0.168.192
+
+-------------------------------------------------------------------------------------
+[Replace full file with that text]
+;
+; BIND reverse data file for local loopback interface
+;
+$TTL	604800
+@	IN	SOA	ns1.verysecureserver.com. root.verysecureserver.com. (
+			      1			; Serial
+			 604800			; Refresh
+			  86400			; Retry
+			2419200			; Expire
+			 604800 )	; Negative Cache TTL
+;
+@	IN	NS	ns1.verysecureserver.com.
+6	IN	PTR	ns1.verysecureserver.com.
+6	IN	PTR	www.verysecureserver.com.
+6	IN	PTR	hello.verysecureserver.com.
+6	IN	PTR	world.verysecureserver.com.
+
+[Save and exit]
+------------------------------------------------------------------------------------
+
+named-checkzone 0.168.192.in-addr.arpa db.0.168.192
+named-checkconf
+
+named-checkzone verysecureserver.com db.verysecureserver.com
+named-checkzone 0.168.192.in-addr.arpa db.0.168.192
+
+service bind9 restart
+service bind9 status
+
+nslookup www.verysecureserver.com
+
+# cat /etc/resolv.conf
+rm /etc/resolv.conf
+ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
+gedit /etc/resolv.conf
+
+-----------------------------------------
+[Replace last line with that text]
+
+nameserver 192.168.0.6
+nameserver 192.168.0.1
+search localdomain
+
+[Save and exit]
+-----------------------------------------
+*Make permanent resolve.conf:
+-----------------------------
+sudo systemctl status resolvconf.service
+sudo apt update
+sudo apt install resolvconf
+sudo systemctl status resolvconf.service
+(if resolveconf isn't running, enable then start it)
+sudo systemctl enable resolvconf.service
+sudo systemctl start resolvconf.service
+
+(check resolveconf status)
+sudo systemctl status resolvconf.service
+(edit the head file)
+sudo nano /etc/resolvconf/resolv.conf.d/head
+
+(enter your nameservers below the comments)
+nameserver 192.168.0.6
+nameserver 192.168.0.1
+search localdomain
+
+(update resolve.conf file)
+sudo resolvconf --enable-updates
+sudo resolvconf -u
+
+(check if changes we successful)
+sudo nano /etc/resolv.conf
+
+---------------------------------------------------------------- 
+
+
+nslookup www.verysecureserver.com
+ping www.verysecureserver.com
+ping hello.verysecureserver.com
+ping world.verysecureserver.com

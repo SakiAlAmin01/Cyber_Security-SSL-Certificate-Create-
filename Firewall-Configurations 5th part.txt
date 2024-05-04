@@ -1,0 +1,30 @@
+sudo apt install ufw
+
+ufw default allow outgoing
+ufw default deny incoming
+
+
+ufw allow ssh
+ufw enable
+ufw status ---------> sudo ufw delete [order no]
+
+sudo ufw allow 22
+sudo ufw allow 53
+sudo ufw allow 80
+sudo ufw allow 443
+
+sudo ufw reload
+
+* sudo ufw insert 1 deny from [client_ip] to any port [port no]
+
+* sudo ufw delete allow [port_no]
+
+*sudo ufw allow 443/tcp limit 10/minute
+
+*sudo ufw limit from 192.168.0.5 to any port 80 --connlimit-above 10 --connlimit-seconds 10
+
+
+
+
+
+

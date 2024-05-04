@@ -1,0 +1,153 @@
+Making necessary setup:
+---------------------------
+sudo -i
+mkdir -p ca/{root-ca,sub-ca,server}/{private,certs,newcerts,crl,csr}
+chmod -v 700 ca/{root-ca,sub-ca,server}/private
+touch ca/{root-ca,sub-ca}/index
+openssl rand -hex 16
+openssl rand -hex 16 > ca/root-ca/serial
+openssl rand -hex 16 > ca/sub-ca/serial
+
+
+cd ca
+
+Generating keys for root,sub ca and server:
+-------------------------------------------
+openssl genrsa -aes256 -out root-ca/private/ca.key 4096
+openssl genrsa -aes256 -out sub-ca/private/sub-ca.key 4096
+openssl genrsa -out server/private/server.key 2048
+tree
+
+Generating Certificates:
+--------------------------
+gedit root-ca/root-ca.conf
+
+cd root-ca
+
+openssl req -config root-ca.conf -key private/ca.key -new -x509 -days 7305 -sha256 -extensions v3_ca -out certs/ca.crt
+openssl x509 -noout -in certs/ca.crt -text
+
+cd ../sub-ca
+
+gedit sub-ca.conf
+openssl req -config sub-ca.conf -new -key private/sub-ca.key -sha256 -out csr/sub-ca.csr
+cd -
+openssl ca -config root-ca.conf -extensions v3_intermediate_ca -days 3652 -notext -in ../sub-ca/csr/sub-ca.csr -out ../sub-ca/certs/sub-ca.crt
+cat index
+openssl x509 -noout -text -in ../sub-ca/certs/sub-ca.crt
+
+Configuring server:
+--------------------
+cd ../server
+
+openssl req -key private/server.key -new -sha256 -out csr/server.csr
+
+cd ../sub-ca
+
+openssl ca -config sub-ca.conf -extensions server_cert -days 365 -notext -in ../server/csr/server.csr -out ../server/certs/server.crt
+
+cat index
+
+cd ../server/certs/
+
+cat server.crt ../../sub-ca/certs/sub-ca.crt ../../root-ca/certs/ca.crt > verysecureserver.crt
+
+cd ..
+
+echo "127.0.0.2 www.verysecureserver.com" >> /etc/hosts
+ping www.verysecureserver.com
+
+openssl s_server -accept 443 -www -key private/server.key -cert certs/server.crt -CAfile ../sub-ca/certs/sub-ca.crt
+
+New Terminal:
+--------------
+sudo -i
+ss -ntl
+sudo apt update
+cp ca/root-ca/certs/ca.crt /usr/local/share/ca-certificates/
+update-ca-certificates -v
+
+New Terminal:
+--------------
+sudo -i
+tree ca
+
+cp /root/ca/root-ca/certs/ca.crt /home/server/certificate
+cp /root/ca/sub-ca/certs/sub-ca.crt /home/server/certificate/
+cp /root/ca/server/certs/verysecureserver.crt /home/server/certificate/
+cp /root/ca/server/certs/server.crt /home/server/certificate/
+cp /root/ca/server/private/server.key /home/server/certificate/
+
+New Terminal:
+---------------
+sudo -i
+cd /opt/lampp/etc/extra
+chmod 777 httpd-ssl.conf 
+gedit httpd-ssl.conf
+
+line 106
+---------
+change server.crt location with your server.crt file location
+{106 SSLCertificateFile "/home/ubuntu-server/certificate/chained.crt"}
+
+line 116
+---------
+change server.key location with your server.key file location
+{116 SSLCertificateKeyFile "/home/ubuntu-server/certificate/server.key"}
+
+line 136
+---------
+change full line with your location
+{136 SSLCACertificatePath "/home/ubuntu-server/certificate"}
+
+--------------------------
+For auto redirect to https
+---------------------------
+<VirtualHost _default_:80>
+ServerName www.example.com:80
+ServerAdmin you@example.com
+Redirect permanent / https://www.verysecureserver.com
+</VirtualHost>
+
+New Terminal:
+---------------
+sudo -i
+cd /opt/lampp/htdocs
+ls
+rm -r dashboard img webalizer
+rm applications.html  bitnami.css  favicon.ico  index.php
+
+[Now make a html file and write some html code]
+touch index.html
+gedit index.html
+
+save and exit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
